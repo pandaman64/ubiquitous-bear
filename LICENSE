@@ -1,0 +1,4 @@
+This software is licensed under MIT License.
+http://opensource.org/licenses/MIT
+
+stream.c is modification of http://curl.haxx.se/libcurl/c/multi-uv.html, which is licensed under MIT License by Daniel Stenberg.
