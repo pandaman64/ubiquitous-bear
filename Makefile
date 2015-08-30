@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Werror -g  
+CFLAGS=-std=c11 -Wall -Wextra -Werror -g  
 LDFLAGS=
 LDLIBS= -lcurl -loauth -lcrypto -luv -ljansson 
 SRCS=stream.c main.c

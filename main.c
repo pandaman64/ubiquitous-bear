@@ -1,3 +1,5 @@
+//for %z specifier with MINGW
+#define __USE_MINGW_ANSI_STDIO 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -5,16 +7,12 @@
 #include "jansson.h"
 #include "stream.h"
 
-//printf format specifier for x64 size_t 
-#include <inttypes.h>
-
 //Consumer key/secret, Token key/secret
 #include "keys.h"
 
 void read_stream(char const* str,size_t len){
-	//printf("read stream :%"PRIu64"\n",stream_body_length());
 	//ちら見せ
-	printf("length: %"PRIu64"\n",len);
+	printf("length: %zu\n",len);
 	assert(str[0] != '\r');
 	
 	json_t *json;
@@ -43,7 +41,7 @@ void read_stream(char const* str,size_t len){
 
 
 
-int main(int argc, char **argv)
+int main()
 {
 	char const* endpoint = "https://userstream.twitter.com/1.1/user.json";
 	

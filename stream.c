@@ -64,9 +64,6 @@ size_t curl_write_cb(char *ptr,size_t size,size_t number,void *userdat){
 	size_t begin_json = 0;
 	size_t begin_delim,end_delim;
 	while(find_delimiter(&buffer[begin_json],buffer_len - begin_json,&begin_delim,&end_delim)){
-		//printf("len: %"PRIu64", beg_json: %"PRIu64"\n",buffer_len,begin_json);
-		//printf("beg_del: %"PRIu64", end: %"PRIu64"\n",begin_delim,end_delim);
-		//fflush(stdout);
 		if(begin_delim > 0){
 			void (*func)(char const*,size_t);
 			func = userdat;
@@ -78,11 +75,9 @@ size_t curl_write_cb(char *ptr,size_t size,size_t number,void *userdat){
 		}
 	}
 	
-	//printf("begin_json = %"PRIu64", buf_len = %"PRIu64"\n",begin_json,buffer_len);
 
 	if(begin_json){
 		if(begin_json < buffer_len){
-			//printf("cut off remainder\n");
 			tmp = malloc(buffer_len - begin_json);
 			memcpy(tmp,&buffer[begin_json],buffer_len - begin_json);
 			free(buffer);
@@ -113,7 +108,6 @@ void check_multi_info(bear_stream_t *stream)
     case CURLMSG_DONE:
       curl_easy_getinfo(message->easy_handle, CURLINFO_EFFECTIVE_URL,
                         &done_url);
-      //curl_easy_getinfo(message->easy_handle, CURLINFO_PRIVATE, &file);
 	  printf("result: %d\n",message->data.result);
 	  
 	  //curl ok
@@ -126,9 +120,6 @@ void check_multi_info(bear_stream_t *stream)
 
       curl_multi_remove_handle(stream->curl_handle, message->easy_handle);
       curl_easy_cleanup(message->easy_handle);
-      /*if(file) {
-        fclose(file);
-      }*/
       break;
 
     default:
@@ -142,13 +133,10 @@ void check_multi_info(bear_stream_t *stream)
 //as soon as an event detected this function will be called.
 void curl_perform(uv_poll_t *req, int status, int events)
 {
+  (void)status; //unused
   int running_handles;
   int flags = 0;
-  //char *done_url;
-  //CURLMsg *message;
-  //int pending;
   
-  //printf("status: %d\n",status);
   bear_stream_t *stream = (bear_stream_t *) req->data;
 
   uv_timer_stop(&stream->timeout);
@@ -158,10 +146,6 @@ void curl_perform(uv_poll_t *req, int status, int events)
   if(events & UV_WRITABLE)
     flags |= CURL_CSELECT_OUT;
 
-  //http://stackoverflow.com/questions/13210239/can-a-c-compiler-add-padding-before-the-first-element-in-a-structure/
-  //reqはcurl_context_tの先頭フィールドであるpoll_handleを指すポインタだからOK
-
-  //printf("perform socket action\n");
   curl_multi_socket_action(stream->curl_handle,stream->sockfd, flags,
                            &running_handles);
 
@@ -173,7 +157,6 @@ void on_timeout(uv_timer_t *req)
   int running_handles;
   bear_stream_t *stream = (bear_stream_t*) req->data;
 
-  //printf("perform socket action\n");
   curl_multi_socket_action(stream->curl_handle, CURL_SOCKET_TIMEOUT, 0,
                            &running_handles);
   check_multi_info(stream);
@@ -181,8 +164,8 @@ void on_timeout(uv_timer_t *req)
 
 void start_timeout(CURLM *multi, long timeout_ms, void *userp)
 {
+	(void)multi; //unused
 	bear_stream_t *stream = (bear_stream_t*) userp;
-	//printf("timeout: %ld\n",timeout_ms);
 	if(timeout_ms < 0){ //timer should be deleted.
 		uv_timer_stop(&stream->timeout);
 		return;
@@ -196,8 +179,7 @@ void start_timeout(CURLM *multi, long timeout_ms, void *userp)
 int handle_socket(CURL *easy, curl_socket_t s, int action, void *userp,
                   void *socketp)
 {
-	//printf("handle_socket action\n");
-	
+	(void)easy; //unused
 	bear_stream_t *stream = (bear_stream_t*) userp;
   if(action == CURL_POLL_IN || action == CURL_POLL_OUT) {
     if(socketp) {
@@ -205,21 +187,16 @@ int handle_socket(CURL *easy, curl_socket_t s, int action, void *userp,
     else {
       create_curl_context(stream,s);
     }
-	//printf("context=%p\n",curl_context);
   }
 
   switch(action) {
   case CURL_POLL_IN:
-	  //printf("CURL_POLL_IN\n");
     uv_poll_start(&stream->poll_handle, UV_READABLE, curl_perform);
     break;
   case CURL_POLL_OUT:
-	  //printf("CURL_POLL_OUT\n");
     uv_poll_start(&stream->poll_handle, UV_WRITABLE, curl_perform);
     break;
   case CURL_POLL_REMOVE:
-	//printf("context=%p\n",socketp);
-	  //printf("CURL_POLL_REMOVE\n");
     if(socketp) {
       uv_poll_stop(&stream->poll_handle);
     }
@@ -232,8 +209,6 @@ int handle_socket(CURL *easy, curl_socket_t s, int action, void *userp,
 }
 
 void add_userstream_handle(bear_stream_t *stream,char const* endpoint,bear_stream_handler handler){
-	//char const* endpoint = "https://stream.twitter.com/1.1/statuses/sample.json";
-
 	CURL *easy_handle = curl_easy_init();
 	char *url;
 	url = oauth_sign_url2(endpoint,NULL,OA_HMAC,NULL,stream->c_key,stream->c_sec,stream->t_key,stream->t_sec);
